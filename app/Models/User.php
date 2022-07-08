@@ -17,7 +17,7 @@ class User extends Model
     protected $protectFields    = true;
     protected $allowedFields    = [
         'name', 'email', 'sekolah', 'nisn', 'wa',
-        'kota', 'provinsi', 'image', 'bikti_nisn',
+        'kota', 'provinsi', 'image', 'bukti_nisn',
         'bukti_bayar', 'password', 'role_id', 'is_active',
     ];
 
@@ -41,7 +41,7 @@ class User extends Model
     protected $beforeUpdate   = [];
     protected $afterUpdate    = [];
     protected $beforeFind     = [];
-    protected $afterFind      = [];
+    protected $afterFind      = ['setImageLink'];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
 
@@ -53,6 +53,17 @@ class User extends Model
     public static function getImageLink(string $imageID)
     {
         return 'https://drive.google.com/uc?id=' . $imageID . '&export=view';
+    }
+
+    public function setImageLink($data)
+    {
+        if (($data['method'] == 'find' && !isset($data['id'])) || $data['method']=='findAll') {
+            foreach($data['data'] as $key => $item) {
+                $data['data'][$key]['bukti_nisn'] = isset($item['bukti_nisn']) ? $this->getImageLink($item['bukti_nisn']) : null;
+                $data['data'][$key]['bukti_bayar'] = isset($item['bukti_bayar']) ? $this->getImageLink($item['bukti_bayar']) : null;
+            }
+        }
+        return $data;
     }
 
     public function fake(Generator &$faker)
@@ -68,8 +79,8 @@ class User extends Model
             'image'	=>	null,
             'bukti_nisn'    =>  $faker->randomAscii(),
             'bukti_bayar'   =>  $faker->randomAscii(),
-            'password'	=>	$faker->password,
-            'role_id'	=>	$faker->numberBetween(1, 5),
+            'password'	=>	password_hash($faker->password, PASSWORD_DEFAULT),
+            'role_id'	=>	$faker->numberBetween(1, 6),
             'is_active'	=>	$faker->boolean,
         ];
     }

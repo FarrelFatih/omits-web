@@ -28,7 +28,6 @@ class Peserta extends BaseController
         
         $nisn_id = $this->upload($bukti_nisn);
         $data['bukti_nisn'] = $nisn_id;
-
         $model->save($data);
 
         return redirect()->back()->with('success', 'Profil berhasil disimpan');
@@ -39,7 +38,7 @@ class Peserta extends BaseController
         $model = new User();
 
         if ($this->validate([
-            'bukti_bayar'	=>	'uploaded[bukti_nisn]|max_size[bukti_nisn,2048]|is_image[bukti_nisn]'
+            'bukti_bayar'	=>	'uploaded[bukti_bayar]|max_size[bukti_bayar,2048]|is_image[bukti_bayar]'
         ], [
             'bukti_bayar'	=>	[
                 'uploaded'	=>  'Terjadi kesalahan saat upload, silakah coba lagi',
@@ -56,6 +55,8 @@ class Peserta extends BaseController
             ]);
 
             return redirect()->back()->with('success', 'Bukti pembayaran berhasil disimpan');
+        } else {
+            return redirect()->back()->with('msg', $this->validator->listErrors());
         }
     }
 
@@ -96,6 +97,36 @@ class Peserta extends BaseController
 
         return $id;
 
+    }
+
+    public function changePassword()
+    {
+        $model = new User();
+        $oldPass = $model->select('password')->find(session('id'))['password'];
+        if (!password_verify($this->request->getPost('old_pass'), $oldPass)) {
+            return redirect()->back()->with('msg', 'Password lama yang anda masukkan salah');
+        }
+
+        if (!$this->validate([
+            'password'	=>	'min_length[8]',
+            'confirm_pass'  =>  'matches[password]'
+        ],[
+            'password'	=>	[
+                'min_length'    =>  'Password minimal 8 karakter'
+            ],
+            'confirm_pass'	=>	[
+                'matches'	=>	'Password baru dan konfirmasi password tidak sama'
+            ]
+        ])) {
+            return redirect()->back()->with('msg', $this->validator->listErrors());
+        } else {
+            $data = [
+                'id'	=>	session('id'),
+                'password'  =>  password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+            ];
+            $model->save($data);
+            return redirect()->back()->with('success', 'Password berhasil diubah');
+        }
     }
 
 }
